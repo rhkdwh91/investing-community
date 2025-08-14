@@ -53,7 +53,12 @@ const timeIntervals: { value: TimeInterval; label: string }[] = [
   { value: "1d", label: "1 Day" },
 ];
 
-const timePeriods: { value: TimePeriod; label: string; interval: TimeInterval; limit: number }[] = [
+const timePeriods: {
+  value: TimePeriod;
+  label: string;
+  interval: TimeInterval;
+  limit: number;
+}[] = [
   { value: "1D", label: "1 Day", interval: "5m", limit: 288 }, // 24 hours * 60 minutes / 5 minutes
   { value: "1W", label: "1 Week", interval: "1h", limit: 168 }, // 7 days * 24 hours
   { value: "1M", label: "1 Month", interval: "4h", limit: 180 }, // ~30 days * 6 intervals per day
@@ -62,35 +67,38 @@ const timePeriods: { value: TimePeriod; label: string; interval: TimeInterval; l
 ];
 
 // Generate mock stock data for demonstration
-const generateMockStockData = (symbol: string, limit: number): unknown[][] => {
-  const data: unknown[][] = [];
+const generateMockStockData = (
+  symbol: string,
+  limit: number,
+): [number, string, string, string, string, string][] => {
+  const data: [number, string, string, string, string, string][] = [];
   const now = Date.now();
   const intervalMs = 5 * 60 * 1000; // 5 minutes in milliseconds
-  
+
   // Base price varies by symbol
   let basePrice = 150; // Default for AAPL
   if (symbol === "TSLA") basePrice = 200;
   if (symbol === "NVDA") basePrice = 800;
   if (symbol === "MSFT") basePrice = 400;
-  
+
   let currentPrice = basePrice;
-  
+
   for (let i = limit - 1; i >= 0; i--) {
-    const timestamp = now - (i * intervalMs);
-    
+    const timestamp = now - i * intervalMs;
+
     // Generate realistic price movement
     const volatility = 0.02; // 2% volatility
     const change = (Math.random() - 0.5) * volatility * currentPrice;
     const open = currentPrice;
     const close = Math.max(0.01, currentPrice + change);
-    
+
     // Generate high and low around open/close
     const high = Math.max(open, close) * (1 + Math.random() * 0.01);
     const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-    
+
     // Generate volume
     const volume = Math.floor(Math.random() * 1000000) + 100000;
-    
+
     data.push([
       timestamp,
       open.toFixed(2),
@@ -98,11 +106,11 @@ const generateMockStockData = (symbol: string, limit: number): unknown[][] => {
       low.toFixed(2),
       close.toFixed(2),
       volume.toString(),
-    ]);
-    
+    ] as [number, string, string, string, string, string]);
+
     currentPrice = close;
   }
-  
+
   return data;
 };
 
@@ -205,10 +213,12 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
     const fetchHistoricalData = async () => {
       try {
         setIsLoading(true);
-        const periodConfig = timePeriods.find(p => p.value === selectedPeriod);
+        const periodConfig = timePeriods.find(
+          (p) => p.value === selectedPeriod,
+        );
         const interval = periodConfig?.interval || selectedInterval;
         const limit = periodConfig?.limit || 100;
-        
+
         let response;
         let data;
 
@@ -224,15 +234,18 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
         }
 
         const formattedData: CandlestickData[] = data
-          .map((item: unknown[]) => ({
-            t: item[0] as number,
-            o: parseFloat(item[1] as string),
-            h: parseFloat(item[2] as string),
-            l: parseFloat(item[3] as string),
-            c: parseFloat(item[4] as string),
-            v: parseFloat(item[5] as string),
+          .map((item: [number, string, string, string, string, string]) => ({
+            t: item[0],
+            o: parseFloat(item[1]),
+            h: parseFloat(item[2]),
+            l: parseFloat(item[3]),
+            c: parseFloat(item[4]),
+            v: parseFloat(item[5]),
           }))
-          .filter((item: CandlestickData) => !isNaN(item.t) && !isNaN(item.o) && !isNaN(item.c))
+          .filter(
+            (item: CandlestickData) =>
+              !isNaN(item.t) && !isNaN(item.o) && !isNaN(item.c),
+          );
 
         setCandleData(formattedData);
         if (formattedData.length > 0) {
@@ -254,16 +267,14 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
   useEffect(() => {
     if (candlestickSeriesRef.current && isChartReady && candleData.length > 0) {
       const sortedData = candleData.sort((a, b) => a.t - b.t);
-      
-      const candlestickData: LWCandlestickData[] = sortedData.map(
-        (item) => ({
-          time: Math.floor(item.t / 1000) as UTCTimestamp,
-          open: item.o,
-          high: item.h,
-          low: item.l,
-          close: item.c,
-        }),
-      );
+
+      const candlestickData: LWCandlestickData[] = sortedData.map((item) => ({
+        time: Math.floor(item.t / 1000) as UTCTimestamp,
+        open: item.o,
+        high: item.h,
+        low: item.l,
+        close: item.c,
+      }));
 
       try {
         (
@@ -298,7 +309,9 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
     const connectWebSocket = () => {
       try {
-        const periodConfig = timePeriods.find(p => p.value === selectedPeriod);
+        const periodConfig = timePeriods.find(
+          (p) => p.value === selectedPeriod,
+        );
         const interval = periodConfig?.interval || selectedInterval;
         const wsUrl = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`;
         const websocket = new WebSocket(wsUrl);
@@ -353,7 +366,9 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
                 }),
               );
               (
-                candlestickSeriesRef.current as { setData: (data: unknown) => void }
+                candlestickSeriesRef.current as {
+                  setData: (data: unknown) => void;
+                }
               ).setData(allCandlestickData);
             }
           }
@@ -369,7 +384,9 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
               } else {
                 updated.push(newCandle);
                 // Keep data within reasonable limits based on selected period
-                const periodConfig = timePeriods.find(p => p.value === selectedPeriod);
+                const periodConfig = timePeriods.find(
+                  (p) => p.value === selectedPeriod,
+                );
                 const maxCandles = periodConfig?.limit || 100;
                 if (updated.length > maxCandles) {
                   updated.shift();
@@ -443,9 +460,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
         <div className="flex items-center space-x-6">
           {/* Time Period Selector */}
           <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">
-              Period:
-            </label>
+            <label className="text-sm font-medium text-gray-700">Period:</label>
             <div className="flex bg-gray-100 rounded-lg p-1">
               {timePeriods.map((period) => (
                 <button
@@ -533,19 +548,23 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
               {candleData.length > 0 ? (
                 <>
                   <span className="font-medium">
-                    {new Date(candleData[candleData.length - 1]?.t ?? 0).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: '2-digit', 
-                      day: '2-digit'
+                    {new Date(
+                      candleData[candleData.length - 1]?.t ?? 0,
+                    ).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
                     })}
                   </span>
                   {" at "}
                   <span className="font-medium">
-                    {new Date(candleData[candleData.length - 1]?.t ?? 0).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: true
+                    {new Date(
+                      candleData[candleData.length - 1]?.t ?? 0,
+                    ).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: true,
                     })}
                   </span>
                 </>
@@ -554,13 +573,16 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
               )}
             </div>
             <div className="text-xs text-gray-400">
-              Period: {selectedPeriod} | Total candles: {candleData.length} | 
-              Interval: {timePeriods.find(p => p.value === selectedPeriod)?.interval || selectedInterval}
+              Period: {selectedPeriod} | Total candles: {candleData.length} |
+              Interval:{" "}
+              {timePeriods.find((p) => p.value === selectedPeriod)?.interval ||
+                selectedInterval}
             </div>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-xs">
-              💡 Mouse wheel: zoom | Click + drag: pan | Double-click: fit content
+              💡 Mouse wheel: zoom | Click + drag: pan | Double-click: fit
+              content
             </div>
           </div>
         </div>
@@ -570,27 +592,36 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
               <div>
                 <span className="text-gray-500">First candle:</span>
                 <div className="font-medium">
-                  {new Date(candleData[0]?.t ?? 0).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
+                  {new Date(candleData[0]?.t ?? 0).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
                   })}
                 </div>
               </div>
               <div>
                 <span className="text-gray-500">Latest candle:</span>
                 <div className="font-medium">
-                  {new Date(candleData[candleData.length - 1]?.t ?? 0).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
+                  {new Date(
+                    candleData[candleData.length - 1]?.t ?? 0,
+                  ).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
                   })}
                 </div>
               </div>
               <div>
                 <span className="text-gray-500">Time range:</span>
                 <div className="font-medium">
-                  {candleData.length > 1 ? Math.ceil(((candleData[candleData.length - 1]?.t ?? 0) - (candleData[0]?.t ?? 0)) / (1000 * 60 * 60 * 24)) : 0} days
+                  {candleData.length > 1
+                    ? Math.ceil(
+                        ((candleData[candleData.length - 1]?.t ?? 0) -
+                          (candleData[0]?.t ?? 0)) /
+                          (1000 * 60 * 60 * 24),
+                      )
+                    : 0}{" "}
+                  days
                 </div>
               </div>
               <div>
