@@ -1,49 +1,306 @@
 "use client";
 
-import CandlestickChart from "@/components/candlestick-chart";
 import { useState } from "react";
 
-type AssetType = "stocks" | "crypto";
+interface CommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  category: string;
+  tags: string[];
+  likes: number;
+  comments: number;
+  views: number;
+  createdAt: string;
+  isPinned?: boolean;
+  isHot?: boolean;
+}
+
+const POSTS_PER_PAGE = 10;
+
+const mockPosts: CommunityPost[] = [
+  {
+    id: "1",
+    title: "2024년 투자 전략 공유 - 성장주 vs 가치주",
+    content:
+      "올해 시장 변동성이 큰 상황에서 어떤 투자 전략이 효과적일지 의견을 나누고 싶습니다. 개인적으로는 기술주 중심의 성장주 포트폴리오를 구성했는데...",
+    author: {
+      name: "김투자",
+      username: "kiminvest",
+      avatar: "KI",
+    },
+    category: "투자전략",
+    tags: ["성장주", "가치주", "포트폴리오"],
+    likes: 42,
+    comments: 18,
+    views: 256,
+    createdAt: "2024-03-15T10:30:00Z",
+    isPinned: true,
+    isHot: true,
+  },
+  {
+    id: "2",
+    title: "삼성전자 실적 분석 및 향후 전망",
+    content:
+      "삼성전자 최근 실적을 분석해보니 메모리 반도체 업황 회복 신호가 보이는 것 같습니다. 특히 HBM 수요 증가가 주목할만한데...",
+    author: {
+      name: "분석러",
+      username: "analyzer99",
+      avatar: "AN",
+    },
+    category: "기업분석",
+    tags: ["삼성전자", "반도체", "실적분석"],
+    likes: 38,
+    comments: 24,
+    views: 312,
+    createdAt: "2024-03-15T09:15:00Z",
+    isHot: true,
+  },
+  {
+    id: "3",
+    title: "미국 금리 인하 전망과 한국 증시 영향",
+    content:
+      "연준의 금리 인하 시기가 점점 늦춰지고 있는 가운데, 한국 증시에 미칠 영향을 분석해보겠습니다...",
+    author: {
+      name: "경제박사",
+      username: "econdr",
+      avatar: "EC",
+    },
+    category: "거시경제",
+    tags: ["금리", "연준", "한국증시"],
+    likes: 56,
+    comments: 31,
+    views: 428,
+    createdAt: "2024-03-15T08:45:00Z",
+  },
+  {
+    id: "4",
+    title: "비트코인 ETF 승인 이후 암호화폐 시장 동향",
+    content:
+      "비트코인 ETF 승인 이후 기관 투자자들의 유입이 증가하고 있습니다. 이번 상승장의 지속성에 대해 어떻게 생각하시나요?",
+    author: {
+      name: "코인매니아",
+      username: "cryptomania",
+      avatar: "CM",
+    },
+    category: "암호화폐",
+    tags: ["비트코인", "ETF", "기관투자"],
+    likes: 73,
+    comments: 45,
+    views: 589,
+    createdAt: "2024-03-15T07:20:00Z",
+  },
+  {
+    id: "5",
+    title: "신규 상장 기업 분석 - 테슬라와 비교",
+    content:
+      "최근 상장한 전기차 관련 기업들을 테슬라와 비교 분석해보겠습니다. 밸류에이션과 성장성 측면에서...",
+    author: {
+      name: "주식초보",
+      username: "stocknewbie",
+      avatar: "SN",
+    },
+    category: "IPO분석",
+    tags: ["IPO", "전기차", "테슬라"],
+    likes: 29,
+    comments: 12,
+    views: 198,
+    createdAt: "2024-03-14T16:30:00Z",
+  },
+  {
+    id: "6",
+    title: "배당주 투자 전략 - 안전한 수익률 추구",
+    content:
+      "변동성이 큰 시장에서 안정적인 배당 수익을 추구하는 전략에 대해 토론해보죠. 추천 종목도 공유해주세요.",
+    author: {
+      name: "배당왕",
+      username: "dividendking",
+      avatar: "DK",
+    },
+    category: "배당투자",
+    tags: ["배당주", "안정투자", "수익률"],
+    likes: 35,
+    comments: 19,
+    views: 287,
+    createdAt: "2024-03-14T14:15:00Z",
+  },
+  {
+    id: "7",
+    title: "글로벌 인플레이션과 투자 포트폴리오 조정",
+    content:
+      "지속되는 인플레이션 압력 속에서 포트폴리오를 어떻게 조정해야 할지 고민이 많습니다. 실물자산 비중을 늘려야 할까요?",
+    author: {
+      name: "펀드매니저",
+      username: "fundmgr",
+      avatar: "FM",
+    },
+    category: "자산배분",
+    tags: ["인플레이션", "자산배분", "실물자산"],
+    likes: 48,
+    comments: 27,
+    views: 356,
+    createdAt: "2024-03-14T11:45:00Z",
+  },
+  {
+    id: "8",
+    title: "ESG 투자의 미래 - 지속가능한 투자 전략",
+    content:
+      "ESG 투자가 단순한 트렌드가 아닌 필수가 되어가고 있습니다. 장기적 관점에서 ESG 기업에 투자하는 것에 대한 의견을 나누고 싶습니다.",
+    author: {
+      name: "그린투자자",
+      username: "greeninvestor",
+      avatar: "GI",
+    },
+    category: "ESG투자",
+    tags: ["ESG", "지속가능", "장기투자"],
+    likes: 41,
+    comments: 22,
+    views: 298,
+    createdAt: "2024-03-14T09:30:00Z",
+  },
+  {
+    id: "9",
+    title: "AI 관련주 투자 기회 분석",
+    content:
+      "ChatGPT 열풍 이후 AI 관련주들이 큰 주목을 받고 있습니다. 하지만 거품 논란도 있는데, 진짜 투자 가치가 있는 기업들을 찾아보겠습니다.",
+    author: {
+      name: "테크분석가",
+      username: "techanalyst",
+      avatar: "TA",
+    },
+    category: "기술주분석",
+    tags: ["AI", "기술주", "투자기회"],
+    likes: 67,
+    comments: 38,
+    views: 445,
+    createdAt: "2024-03-13T15:20:00Z",
+  },
+  {
+    id: "10",
+    title: "중국 시장 리오프닝 효과와 투자 전략",
+    content:
+      "중국의 코로나 정책 변화로 경제 리오프닝이 본격화되고 있습니다. 중국 관련주나 원자재 투자에 대한 의견이 궁금합니다.",
+    author: {
+      name: "차이나워처",
+      username: "chinawatcher",
+      avatar: "CW",
+    },
+    category: "해외투자",
+    tags: ["중국", "리오프닝", "원자재"],
+    likes: 33,
+    comments: 16,
+    views: 243,
+    createdAt: "2024-03-13T13:10:00Z",
+  },
+];
+
+const categories = [
+  "전체",
+  "투자전략",
+  "기업분석",
+  "거시경제",
+  "암호화폐",
+  "IPO분석",
+  "배당투자",
+  "자산배분",
+  "ESG투자",
+  "기술주분석",
+  "해외투자",
+];
+
+const sortOptions = [
+  { value: "latest", label: "최신순" },
+  { value: "popular", label: "인기순" },
+  { value: "comments", label: "댓글순" },
+  { value: "views", label: "조회순" },
+];
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState<AssetType>("stocks");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [sortBy, setSortBy] = useState("latest");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredPosts = mockPosts.filter((post) => {
+    const matchesCategory =
+      selectedCategory === "전체" || post.category === selectedCategory;
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
+    switch (sortBy) {
+      case "popular":
+        return b.likes - a.likes;
+      case "comments":
+        return b.comments - a.comments;
+      case "views":
+        return b.views - a.views;
+      default:
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }
+  });
+
+  const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const currentPosts = sortedPosts.slice(
+    startIndex,
+    startIndex + POSTS_PER_PAGE,
+  );
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60),
+    );
+
+    if (diffInHours < 1) return "방금 전";
+    if (diffInHours < 24) return `${diffInHours}시간 전`;
+    if (diffInHours < 48) return "어제";
+    return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Navigation Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">IC</span>
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">FS</span>
                 </div>
                 <span className="ml-2 text-xl font-bold text-gray-900">
-                  InvestCommunity
+                  FinSight
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-8">
               <a
                 href="#"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                className="text-blue-600 border-b-2 border-blue-600 px-3 py-2 text-sm font-medium"
               >
-                Discussions
+                커뮤니티
               </a>
               <a
                 href="#"
                 className="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium"
               >
-                Charts
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium"
-              >
-                Members
+                뉴스
               </a>
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Join Community
+                글쓰기
               </button>
             </div>
           </div>
@@ -51,640 +308,184 @@ export default function Page() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-br from-blue-50 to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4">
-            Your Investment
-            <span className="text-blue-600 block">Community Hub</span>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            투자 인사이트를 공유하는
+            <span className="text-blue-600 block">스마트 커뮤니티</span>
           </h1>
-          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
-            Join live discussions, share insights, and learn from thousands of
-            investors in real-time.
+          <p className="text-gray-600 mb-4 max-w-2xl mx-auto">
+            실시간 토론, 전문가 분석, 데이터 기반 투자 정보를 한 곳에서
           </p>
         </div>
       </section>
 
-      {/* Asset Type Tabs */}
-      <section className="px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center">
-            <div className="flex bg-white rounded-xl shadow-sm p-1 mb-8">
-              <button
-                onClick={() => setActiveTab("stocks")}
-                className={`px-8 py-3 rounded-lg font-semibold text-sm transition-all ${
-                  activeTab === "stocks"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                📈 Stocks
-              </button>
-              <button
-                onClick={() => setActiveTab("crypto")}
-                className={`px-8 py-3 rounded-lg font-semibold text-sm transition-all ${
-                  activeTab === "crypto"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                ₿ Crypto
-              </button>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="제목, 내용으로 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Categories */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === category
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* Main Content - Board and Chat */}
-      <section className="px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Discussion Board */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-lg">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {activeTab === "stocks"
-                        ? "Stock Discussions"
-                        : "Crypto Discussions"}
-                    </h2>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      New Post
-                    </button>
-                  </div>
-                  <div className="flex space-x-4 mt-4">
-                    <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                      All
-                    </button>
-                    <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium">
-                      Hot
-                    </button>
-                    <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium">
-                      Analysis
-                    </button>
-                    <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium">
-                      {activeTab === "stocks" ? "Earnings" : "DeFi"}
-                    </button>
-                  </div>
+        {/* Posts List */}
+        <div className="bg-white rounded-lg shadow-sm">
+          {currentPosts.map((post) => (
+            <div
+              key={post.id}
+              className={`p-6 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 cursor-pointer transition-colors ${
+                post.isPinned ? "bg-blue-50 border-blue-200" : ""
+              }`}
+            >
+              <div className="flex items-start space-x-4">
+                {/* Avatar */}
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-semibold text-sm">
+                    {post.author.avatar}
+                  </span>
                 </div>
-                <div className="divide-y divide-gray-200">
-                  {activeTab === "stocks" ? (
-                    <>
-                      {/* Stock Discussion Post 1 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              JD
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                NVIDIA Q4 Earnings Analysis - Better than
-                                Expected?
-                              </h3>
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                                Hot
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              Just reviewed NVIDIA's latest earnings report.
-                              Revenue beat expectations at $60.9B vs $57.9B
-                              expected. Data center revenue up 409% YoY. What's
-                              everyone's take on the guidance for Q1?
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @johntrader</span>
-                              <span>•</span>
-                              <span>2 hours ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>24 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>56</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Stock Discussion Post 2 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              SM
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                Apple's Services Revenue Growth Strategy
-                              </h3>
-                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                                Analysis
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              With iPhone sales plateauing, Apple's focus on
-                              services is paying off. App Store, iCloud, and
-                              Apple Pay driving consistent revenue growth. Is
-                              this sustainable long-term?
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @sarahstocks</span>
-                              <span>•</span>
-                              <span>4 hours ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>18 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>32</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Stock Discussion Post 3 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              RT
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                Fed Rate Cuts Impact on Bank Stocks
-                              </h3>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              With potential rate cuts coming, how will this
-                              affect major bank stocks like JPM, BAC, and WFC?
-                              Historical analysis shows mixed results...
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @ratetrader</span>
-                              <span>•</span>
-                              <span>6 hours ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>15 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>28</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Crypto Discussion Post 1 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              BK
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                Bitcoin ETF Approval Impact - New All-Time High?
-                              </h3>
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                                Hot
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              With multiple Bitcoin ETFs now approved, we're
-                              seeing massive institutional inflows. Could this
-                              be the catalyst for $100k+ Bitcoin? What are your
-                              price targets?
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @bitcoinbull</span>
-                              <span>•</span>
-                              <span>1 hour ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>42 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>78</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Crypto Discussion Post 2 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              ED
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                Ethereum Shanghai Upgrade - Staking Rewards
-                                Analysis
-                              </h3>
-                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
-                                DeFi
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              Post-Shanghai upgrade, ETH staking yields are
-                              stabilizing around 4-5%. Comparing this to
-                              traditional bonds and dividend stocks - is it
-                              competitive?
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @ethdefi</span>
-                              <span>•</span>
-                              <span>3 hours ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>26 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>45</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Crypto Discussion Post 3 */}
-                      <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              AL
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                                Altcoin Season Indicators - Are We There Yet?
-                              </h3>
-                            </div>
-                            <p className="text-gray-600 mt-1 line-clamp-2">
-                              Bitcoin dominance at 52% and dropping. Layer 1s
-                              like SOL, AVAX showing strength. Traditional
-                              altseason metrics suggest we might be entering the
-                              next phase...
-                            </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                              <span>by @altcoinwatch</span>
-                              <span>•</span>
-                              <span>5 hours ago</span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>💬</span>
-                                <span>31 replies</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center space-x-1">
-                                <span>👍</span>
-                                <span>52</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="p-6 border-t border-gray-200 text-center">
-                  <button className="text-blue-600 hover:text-blue-800 font-medium">
-                    View All Discussions →
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Chat */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
-                <div className="p-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {activeTab === "stocks" ? "Stock Chat" : "Crypto Chat"}
-                    </h3>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600">
-                        {activeTab === "stocks" ? "89 online" : "156 online"}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-2">
+                    {post.isPinned && (
+                      <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                        📌 공지
                       </span>
-                    </div>
+                    )}
+                    {post.isHot && (
+                      <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+                        🔥 인기
+                      </span>
+                    )}
+                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {post.category}
+                    </span>
                   </div>
-                </div>
 
-                <div
-                  className="flex-1 p-4 space-y-4 overflow-y-auto"
-                  style={{ maxHeight: "400px" }}
-                >
-                  {activeTab === "stocks" ? (
-                    <>
-                      {/* Stock Chat Message 1 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            AL
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              alexstocks
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:34 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Anyone watching TSLA today? Volume is unusual 📈
-                          </p>
-                        </div>
-                      </div>
+                  <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 mb-2">
+                    {post.title}
+                  </h3>
 
-                      {/* Stock Chat Message 2 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            RJ
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              RobTrader
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:35 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Yeah, broke resistance at $205. Could run to $220
-                          </p>
-                        </div>
-                      </div>
+                  <p className="text-gray-600 mb-3 line-clamp-2">
+                    {post.content}
+                  </p>
 
-                      {/* Stock Chat Message 3 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            LM
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              LisaEquities
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:36 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            NVDA earnings coming up next week, might be worth
-                            watching
-                          </p>
-                        </div>
-                      </div>
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
 
-                      {/* Stock Chat Message 4 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            DK
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              DaveValue
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:37 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            SPY looking weak though, might drag everything down
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Stock Chat Message 5 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            MF
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              MarketFocus
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:38 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Apple services revenue still growing strong 🍎
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Crypto Chat Message 1 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            BT
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              BitcoinTom
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:34 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            BTC ETF flows are insane today! $2.1B inflow 🚀
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Crypto Chat Message 2 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            EH
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              EthHolder
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:35 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            ETH staking rewards at 4.2% now, better than bonds
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Crypto Chat Message 3 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            DX
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              DeFiExplorer
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:36 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            SOL ecosystem growing fast, check out the new DEXs
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Crypto Chat Message 4 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            AT
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              AltcoinTrader
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:37 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Bitcoin dominance dropping, altseason incoming? 🌊
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Crypto Chat Message 5 */}
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-xs">
-                            CH
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm text-gray-900">
-                              CryptoHODL
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              2:38 PM
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">
-                            Layer 2 tokens pumping hard today 📈
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="p-4 border-t border-gray-200">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Type a message..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Send
-                    </button>
+                  {/* Meta */}
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>by @{post.author.username}</span>
+                    <span>•</span>
+                    <span>{formatDate(post.createdAt)}</span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      <span>👁️</span>
+                      <span>{post.views.toLocaleString()}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      <span>💬</span>
+                      <span>{post.comments}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      <span>👍</span>
+                      <span>{post.likes}</span>
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
-      </section>
 
-      {/* Chart Section - Now Secondary */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {activeTab === "stocks"
-                ? "Stock Market Chart"
-                : "Crypto Market Chart"}
-            </h2>
-            <p className="text-gray-600">
-              {activeTab === "stocks"
-                ? "Live stock price data for community discussions"
-                : "Live cryptocurrency price data for community discussions"}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <CandlestickChart
-              symbol={activeTab === "stocks" ? "AAPL" : "BTCUSDT"}
-              assetType={activeTab === "stocks" ? "stock" : "crypto"}
-              key={activeTab}
-            />
-          </div>
-        </div>
-      </section>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-2 mt-8">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              이전
+            </button>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <p>&copy; 2025 InvestCommunity. All rights reserved.</p>
-      </footer>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === page
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              다음
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
