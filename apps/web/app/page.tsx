@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface CommunityPost {
   id: string;
@@ -299,9 +300,12 @@ export default function Page() {
               >
                 뉴스
               </a>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <Link
+                href="/login"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-block"
+              >
                 글쓰기
-              </button>
+              </Link>
             </div>
           </div>
         </div>
